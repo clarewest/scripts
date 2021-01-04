@@ -1,0 +1,7 @@
+The meta_map only includes metapsicov contacts over 0.5 (maybe a mistake?)
+For now, use:
+
+for TARGET in $(cat targets.txt); do 
+  LENGTH=$(cat $TARGET.fasta.ss | wc -l); 
+  $QA/bin/clare_parse_metapsicov $TARGET.metapsicov.stage1 $LENGTH 0.5 > $TARGET.meta_map; 
+done

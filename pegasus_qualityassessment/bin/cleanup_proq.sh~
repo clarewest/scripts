@@ -1,0 +1,13 @@
+TARGET=$1
+R=".repacked"
+
+for DECOY in $(cat $TARGET.proq_lst);
+do
+  MODEL=ProQ3D_$DECOY
+ # rm $MODEL$R.proq3.svm $MODEL$R.proq2.svm $MODEL$R.highres.svm $MODEL$R.lowres.svm $MODEL.ss2 $MODEL.acc $MODEL.psi $MODEL.mtx $MODEL.rosetta.log
+ # rm  $MODEL$R.proq3 $MODEL$R.proq2 $MODEL$R.highres $MODEL$R.lowres
+ # rm $MODEL$R $MODEL$R.minimized $MODEL$R.ss2 $MODEL$R.acc $MODEL$R.psi $MODEL$R.mtx
+  rm $MODEL$R.silent
+  rm $MODEL$R.features.*.temp $MODEL$R.features.*.temp2
+  rm $MODEL$R$M.features.highres.$$.temp $MODEL$R$M.features.lowres.$$.temp $MODEL$R$M.features.lowres_global.$$.temp $MODEL$R.features.proq2.$$.temp $MODEL$R.features.proq2.$$.temp2 $MODEL$R.features.proq2.$$.temp3 $MODEL$R.features.target.$$.temp $MODEL$R$M.score.$$.temp $MODEL$R$M.score.$$.temp2 $MODEL$R$M.score.$$.temp3 $MODEL$R$M.score.$$.temp4 $MODEL$R.features.rsa_ss.$$.temp
+done

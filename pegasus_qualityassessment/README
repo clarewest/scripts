@@ -1,0 +1,93 @@
+RFQA
+
+A Random Forest Quality Assessor to identify correct protein structure prediction. 
+
+##### Assess quality #####
+$QA/assess_quality_all.sh $PDB $CHAIN $PDB
+
+This script will first get the target-specific features, then will run the script assess_quality.sh
+for each decoy in the list TARGET.lst. The decoy-specific list will run in parallel, using the number of cores specified on line 4
+The following files are required in the data/DATASET directory: 
+
+TARGET/models            : Ensure they all have a chain id. You can add the chain id "A" using the script:
+                         - $QA/bin/replace_chains.sh
+
+TARGET.fasta             : sequence file
+TARGET.fasta.txt         : sequence file
+TARGET.aln               : alignment file (from contact prediction)
+TARGET.metapsicov.stage1 : metapsicov output (predicted contacts)
+TARGET.fasta.ss2         : (for EigenTHREADER) psipred output file (predicted SS) - not the one used by metapsicov!
+                         - $QA/bin/parallelize.sh
+
+TARGET.lst               : A list of decoy names
+TARGET.pcons_lst         : A list of decoy names including directory
+TARGET.proq_lst          : A list of decoy names including directory and .pdb extension
+                         - $QA/bin/make_lsts.sh TARGET
+
+TARGET.con               : predicted contact file for use in SAINT2 scoring
+config_TARGET file       : SAINT2 configuration file with scoring weights (check paths)
+
+TARGET.out               : EigenTHREADER output
+                         - note that decoy names must be added with $QA/bin/paste_eig_lst.sh
+TARGET.pcons.txt         : PCONS output
+
+Pcons, EigenTHREADER and Proq3D need to be run once on the ensemble of decoys. Run using:
+$QA/bin/run_eigen.sh $TARGET $DATASET    : requires TDB_DIR directory and files generated using assess_quality.sh
+$QA/bin/run_pcons                        : requires TARGET.pcons_lst
+$QA/bin/runproq3d.sh                     : requires proq_lst
+
+The output of EigenTHREADER (TARGET.out) truncates the decoy name, therefore TARGET.lst and
+TARGET.out must be merged. Be careful if there are more than 500 models in TARGET.lst as
+assess_quality.sh only takes the last 500.
+
+bash ../../bin/paste_eig_lst.sh $TARGET > $TARGET.out.tmp ; mv $TARGET.out.tmp $TARGET.out
+
+Once these have been run, the corresponding features can be uncommented from the assess_quality.sh
+script. Save output in TARGET.results_proq3d.txt
+
+##### PcombC #####
+This is a linear combination of Pcons, ProQ3D and PPV scores. Calculate and add using:
+$QA/bin/add_pcombc.sh ListOfTargets.txt
+Output will be called TARGET.results_pcombc.txt
+
+Alternatively:
+$QA/bin/add_all_pcombc.sh
+Output will be called results_pcombc.txt
+
+##### Filtering #####
+Filtering combines the top-75 decoys ranked by SAINT2 score, EigenTHREADER and PcombC. The following
+script will carry out the filtering (output to TARGET.results_filtered75.txt) and print to screen
+the resulting number of unique decoys and the total number of decoys (75x3).
+
+$QA/bin/filtering_script.sh ListOfTargets.txt > filtering.out
+
+##### Extract Features #####
+This script will calculate the summary features of the target.
+Not that it requires the file: list_full.txt  # Target Length SCOP_Class Beff
+$QA/bin/extract_features.sh $TARGET $DATASET 
+
+### ScafFold considerations
+CONTACTS
+First save original metapsicov files used to make vcon at Flib stage:
+for FILE in $(ls *.metapsicov*stage1); do cp $FILE "$FILE"_ori ; done
+
+If only the end has been predicted, then filter out contacts that are entirely within the segment. Note that for Flib and SAINT2,
+correct (according to the template) contacts would have been retained to, but for QA these give no
+information so are removed)
+$QA/bin/filter_metapsicov.py $TARGET $TERMINUS $MISSING
+
+Then, cp then resulting $TARGET.vcon to $TARGET.con (to be included in SAINT2 scoring) and remove metapsicov_stage1 so that the predicted contacts can be validated again against the
+real structure.
+
+Change SAINT2 and TM2 in $QA/assess_quality.sh
+Requires: sampled_$TARGET.pdb for TMscore
+
+Get fnat:
+for PDB in $(cat list.txt); do ARGS=$(grep $PDB fake_segs.txt | awk '{print $1, $6, $5}'); python ~/Project/Scripts/fnat.py $ARGS; done
+
+Gather scores:
+for SCORE in $(echo flexscore endscore); do for PDB in $(cat list.txt); do sed "s/^/$PDB\t/" "$SCORE"_"$PDB"* ; done > results_$SCORE.txt ; done
+cat fnat_* > results_fnat.txt
+combine_results.R
+
+Output will be called result_scaffold.txt

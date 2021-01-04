@@ -1,0 +1,1 @@
+sed -i 's%/data/pegasus/west/TentativeCathSet/SAINTdata/N/%/data/pegasus/not-backed-up/west/QualityAssessment/data/trial/%'
