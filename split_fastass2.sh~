@@ -1,0 +1,2 @@
+for TARGET in $(cat list.txt); do SEG=$(cat /data/icarus/west/ValidationsetFoldons/Foldon1/${TARGET:0:6}.seg); S=$(($SEG+2)); head -n$S ${TARGET:0:6}.fasta.ss2 > $TARGET.fasta.ss2; done
+for TARGET in $(cat list.txt); do SEG=$(cat /data/icarus/west/ValidationsetFoldons/Foldon1/${TARGET:0:6}.seg); head -n2 ../Validationset_Foldon1/${TARGET:0:6}.fasta.ss2 > $TARGET.fasta.ss2; awk -v SEG=$((SEG)) '{if ($1>SEG) {$1=$1-SEG; printf "%4i %s %-2s %6.3f %6.3f %6.3f\n", $1, $2, $3, $4, $5, $6}}'  ../Validationset_Foldon1/${TARGET:0:6}.fasta.ss2 >> $TARGET.fasta.ss2 ; done

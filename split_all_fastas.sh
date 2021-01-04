@@ -1,0 +1,1 @@
+for PDB in $(cat trainingset.txt); do SEG=$(cat $PDB.templen) ; SEG=$((SEG+1)); head -n1 $PDB.fasta.txt | sed 's/$/.d2/' > $PDB.d2.fasta.txt; tail -n1 $PDB.fasta.txt | cut -c"$SEG"- >> $PDB.d2.fasta.txt; done

@@ -1,0 +1,105 @@
+# coding: utf-8
+import Bio.PDB
+import numpy
+from Bio.PDB import PDBParser, PPBuilder, PDBIO
+import warnings
+import sys
+import os
+import csv
+
+def set_atom_lists(ref_chain, alt_chain, seq, val):
+  ref_atoms = []
+  alt_atoms = []
+  resnums = [ residue.id[1] for residue in ref_chain.get_residues() if residue.id[1] <= len(seq) ]   # Get residue numbers present in native
+  alt_chain_eq = [ alt_chain[i] for i in resnums ]                                                   # Only include equivalent from decoy
+  seq_eq = [ seq[i-1] for i in resnums ]                                                             # Only include equivalent from sequence
+  val_eq = [ val[i-1] for i in resnums ]
+  ref_chain_eq = [ ref_chain[i] for i in resnums ]                                                   # Do the same for native to remove eg HOH at end
+  for ref_res, alt_res, amino, allow in zip(ref_chain_eq, alt_chain_eq, seq_eq, val_eq):
+      if not ref_res.resname == alt_res.resname:
+        print ref_res.resname, alt_res.resname
+        exit()
+      assert ref_res.id      == alt_res.id
+      assert amino == Bio.PDB.Polypeptide.three_to_one(ref_res.resname)
+      if allow:
+        for atomtype in ["CA","C","O","N"]:
+          ref_atoms.append(ref_res[atomtype])
+          alt_atoms.append(alt_res[atomtype])
+  return ref_atoms, alt_atoms
+
+def get_rmsd(ref_atoms, alt_atoms):
+    rmsd = numpy.sqrt(sum([ (pair[0] - pair[1]) ** 2 for pair in zip(alt_atoms, ref_atoms) ]) / len(alt_atoms))     
+    return rmsd
+
+def writeOut(listoflists, outfile):
+    with open(outfile, "w") as f:
+        wr = csv.writer(f, delimiter=" ")
+        wr.writerows(listoflists)
+
+if len(sys.argv) != 3:
+  print "USAGE:    script.py pdbcode terminus"
+
+pdbcode = sys.argv[1]
+terminus = sys.argv[2]
+flexes=range(0,30)
+rmsds = []
+
+template = pdbcode+".pdb"
+native = "real_"+template
+chain="A"
+
+io = PDBIO()
+warnings.filterwarnings('always', message='.*discontinuous at.*')
+pdb_parser = PDBParser(PERMISSIVE=1,QUIET=True)
+
+with open(pdbcode+".templen","r") as f:
+    templen=int(f.readline().strip())
+
+with open(pdbcode+".fasta.txt","r") as fin:
+    lines = fin.readlines()
+    sequence = lines[1].strip()
+    length=len(sequence)
+
+for flex in flexes:
+    seg = templen - flex
+    ########## Setting atoms to score ##########
+    score_residues = [False] * length
+    scaf_residues = [False] * length
+    if terminus == "C":
+        flexrange = range(seg, templen)
+        segrange = range(0, seg)
+    elif terminus == "N":
+        flexrange = range(length-templen,length-seg)
+        segrange = range(length-seg, length)
+    else:
+        print("ERROR: That's not a terminus")
+        sys.exit()
+    for i in flexrange:
+        score_residues[i] = True  
+    for i in segrange:
+        scaf_residues[i] = True
+    ###########################################
+    nativestructure = pdb_parser.get_structure(native, native)
+    nat_chain = nativestructure[0][chain]
+    templatestructure = pdb_parser.get_structure(template, template)
+    template_chain = templatestructure[0][chain]
+    nat_score_atoms, template_score_atoms =  set_atom_lists(nat_chain, template_chain, sequence, score_residues)     # List of residues to score RMSD
+    nat_scaf_atoms, template_scaf_atoms =  set_atom_lists(nat_chain, template_chain, sequence, scaf_residues)     # List of atoms to set as scaffold
+    super_imposer = Bio.PDB.Superimposer()
+    super_imposer.set_atoms(nat_scaf_atoms, template_scaf_atoms)                                
+    # Superimpose scaffold of template and target and get RMSD
+    super_imposer.apply(template_chain.get_atoms()) 
+    segrmsd = super_imposer.rms
+    ############ Get RMSD of flex region ########
+    if flex != 0:
+        flexrmsd = get_rmsd(nat_score_atoms, template_score_atoms) 
+        nat_score_atoms, template_score_atoms =  set_atom_lists(nat_chain, template_chain, sequence, score_residues)     # List of atoms to set as scaffold
+        super_imposer = Bio.PDB.Superimposer()
+        super_imposer.set_atoms(nat_score_atoms, template_score_atoms)           
+        super_imposer.apply(template_chain.get_atoms()) 
+        flexmrmsd = super_imposer.rms
+    else:
+        flexrmsd = 0
+        flexmrmsd = 0
+    rmsds.append([pdbcode] + [round(i,3) for i in [ segrmsd, flexrmsd, flexmrmsd]])
+writeOut(rmsds, pdbcode+".flex_sweep")

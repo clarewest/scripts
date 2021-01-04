@@ -1,0 +1,28 @@
+TARGET=$1;
+CHAIN_TARGET=$2;
+
+export QA=~/Project/Scripts/
+
+#if [ ! -f $TARGET.metapsicov_stage1 ]
+#then
+    if [ ! -f $TARGET.metapsicov.stage1 ]
+    then
+        echo "Contact file for $TARGET not found. Moving onto the next target" 1>&2;
+        exit;
+    fi
+    # Compute the true contact map and the PDB sequence:
+    $QA/contactsbin/getcontactsSparse3.py $TARGET.pdb $CHAIN_TARGET 8.0 2> $TARGET.log
+    # Contacts are usually calculated using the fasta sequence of the target ($TARGET.metapsicov.stage1).
+    # This line corrects the contacts so the numbering matches the sequence on the PDB (and not on the fasta)
+    $QA/contactsbin/convert $TARGET.proxy_fasta $TARGET.aln $TARGET.metapsicov.stage1 $TARGET.proxy_map > $TARGET.metapsicov_stage1 2> $TARGET.metapsicov_stage1_messages
+#fi
+
+if [ ! -f $TARGET.neff ]
+then
+    $QA/contactsbin/calc_neff $TARGET.aln 0.90 | awk '{print $3}' > $TARGET.neff;
+fi
+
+#if [ ! -f $TARGET.ppv ]
+#then
+    grep "True Positives:" $TARGET.metapsicov_stage1_messages | awk '{print $3,$4,$5}' > $TARGET.ppv
+#fi

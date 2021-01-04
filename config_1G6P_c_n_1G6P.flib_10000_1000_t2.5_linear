@@ -1,0 +1,92 @@
+# Created using:
+# /homes/west/Project/homes/oliveira/SAINT_laura//scripts/create_config 1G6P c n /data/icarus/west/saintresults/thermophiles/1G6P.fasta.txt /data/icarus/west/saintresults/thermophiles/1G6P.flib 10000 1000 2.5 linear
+
+[Sequence]
+
+type = amino
+file = /data/icarus/west/saintresults/thermophiles/1G6P.fasta.txt
+
+[General]
+
+sequential = true
+moves = 1000
+
+[Extension]
+
+type = fixed
+
+move_distribution = linear
+
+initial = 9
+extrude = 1
+growth_moves = 10000
+
+[Scoring]
+
+type = combined
+
+# "long" = longer than 150 residues
+# "short" = less than or equal to 150 residues
+
+long_rapdf_file = /homes/west/Project/homes/oliveira/SAINT_laura//data/long_rapdf.data
+long_solvation_file = /homes/west/Project/homes/oliveira/SAINT_laura//data/long_solv.data
+long_torsion_file = /homes/west/Project/homes/oliveira/SAINT_laura//data/long_torsion.data
+long_orientation_file = /homes/west/Project/homes/oliveira/SAINT_laura//data/long_orient.data
+long_saulo_file = /data/icarus/west/saintresults/thermophiles/1G6P.con
+long_predss_file = /data/icarus/west/saintresults/thermophiles/1G6P.fasta.ss
+long_contact_file = /data/icarus/west/saintresults/thermophiles/foo.cmap
+long_predtor_file = /data/icarus/west/saintresults/thermophiles/1G6P.spXout
+
+short_rapdf_file = /homes/west/Project/homes/oliveira/SAINT_laura//data/short_rapdf.data
+short_solvation_file = /homes/west/Project/homes/oliveira/SAINT_laura//data/short_solv.data
+short_torsion_file = /homes/west/Project/homes/oliveira/SAINT_laura//data/short_torsion.data
+short_orientation_file = /homes/west/Project/homes/oliveira/SAINT_laura//data/short_orient.data
+short_saulo_file = /data/icarus/west/saintresults/thermophiles/1G6P.con
+short_predss_file = /data/icarus/west/saintresults/thermophiles/1G6P.fasta.ss
+short_contact_file = /data/icarus/west/saintresults/thermophiles/foo.cmap
+short_predtor_file = /data/icarus/west/saintresults/thermophiles/1G6P.spXout
+
+long_weight_rapdf       = 0.156
+long_weight_solvation   = 0.262
+long_weight_lj          = 0.505
+long_weight_hbond       = 0
+long_weight_saulo       = 0
+long_weight_core        = 1
+long_weight_predss      = 0
+long_weight_rgyr        = 0
+long_weight_contact     = 0
+long_weight_crowding    = 0
+long_weight_randomscr   = 0
+long_weight_orientation = 0.077
+long_weight_torsion     = 0
+long_weight_predtor     = 0
+
+short_weight_rapdf       = 0.156
+short_weight_solvation   = 0.262
+short_weight_lj          = 0.505
+short_weight_hbond       = 0
+short_weight_saulo       = 0
+short_weight_core        = 1
+short_weight_predss      = 0
+short_weight_rgyr        = 0
+short_weight_contact     = 0
+short_weight_crowding    = 0
+short_weight_randomscr   = 0
+short_weight_orientation = 0.077
+short_weight_torsion     = 0
+short_weight_predtor     = 0
+
+weight_ribosome = 0
+raw_scores = true
+
+[Strategy]
+
+type = monte
+temperature = 2.5
+number = 1
+
+[Movement]
+
+type = fragment
+lib = /data/icarus/west/saintresults/thermophiles/1G6P.flib
+
